@@ -16,6 +16,9 @@ const regularJamaKharchRoutes = require('./routes/regularJamaKharchRoutes');
 
 const app = express();
 
+// Trust proxy is required for secure cookies behind a load balancer (like Render)
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -25,8 +28,8 @@ app.use(cors({
 }));
 
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'success', 
+  res.json({
+    status: 'success',
     message: 'Server is running!',
     timestamp: new Date().toISOString()
   });
@@ -55,7 +58,7 @@ const startServer = async () => {
     await testConnection();
     await sequelize.sync({ alter: false });
     console.log('✅ Database tables synchronized');
-    
+
     app.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
       console.log(`🔗 API Base: http://localhost:${PORT}/api`);
