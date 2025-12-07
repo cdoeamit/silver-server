@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({
-  origin: 'https://silveer-forntend.vercel.app/',
+  origin: 'https://silveer-forntend.vercel.app',
   credentials: true
 }));
 
