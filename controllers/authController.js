@@ -30,14 +30,14 @@ const signup = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       maxAge: 15 * 60 * 1000
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
@@ -94,14 +94,14 @@ const login = async (req, res) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       maxAge: 15 * 60 * 1000
     });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
@@ -162,53 +162,70 @@ const refreshAccessToken = async (req, res) => {
     if (!user || !user.isActive) {
       return res.status(401).json({
         status: 'error',
-      } catch (error) {
-        console.error('Token refresh error:', error);
-        return res.status(500).json({
-          status: 'error',
-          message: 'Failed to refresh token'
-        });
-      }
-    };
+        message: 'User not found'
+      });
+    }
 
-    const getProfile = async (req, res) => {
-      try {
-        const user = await User.findByPk(req.user.userId);
+    const newAccessToken = generateAccessToken(user.id, user.role);
 
-        if (!user) {
-          return res.status(404).json({
-            status: 'error',
-            message: 'User not found'
-          });
+    res.cookie('accessToken', newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+      maxAge: 15 * 60 * 1000
+    });
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Token refreshed successfully'
+    });
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to refresh token'
+    });
+  }
+};
+
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+          phone: user.phone,
+          createdAt: user.createdAt
         }
-
-        return res.status(200).json({
-          status: 'success',
-          data: {
-            user: {
-              id: user.id,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              email: user.email,
-              role: user.role,
-              phone: user.phone,
-              createdAt: user.createdAt
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Get profile error:', error);
-        return res.status(500).json({
-          status: 'error',
-          message: 'Failed to get profile'
-        });
       }
-    };
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to get profile'
+    });
+  }
+};
 
-    module.exports = {
-      signup,
-      login,
-      logout,
-      refreshAccessToken,
-      getProfile
-    };
+module.exports = {
+  signup,
+  login,
+  logout,
+  refreshAccessToken,
+  getProfile
+};
